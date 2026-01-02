@@ -1,4 +1,7 @@
 using API;
+using API.Data;
+using API.Models;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,8 +23,30 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
+await InitializeContextAsync();
 app.Run();
+
+async Task InitializeContextAsync()
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        var userManager = services.GetRequiredService<UserManager<AppUser>>();
+
+        await ContextInitializer.InitializeAsync(context, userManager);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while initializing the database.");
+        throw;
+    }
+}

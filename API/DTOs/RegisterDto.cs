@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using static API.Utils.Utils;
 
 namespace API.DTOs;
 
@@ -35,7 +36,5 @@ public class RegisterDto
     [RegularExpression(PasswordPattern, ErrorMessage = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character")]
     public string Password { get; set; } = string.Empty;
 
-    private const string UsernamePattern = "^[a-zA-Z0-9]+$";
-    private const string EmailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-    private const string PasswordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$";
+
 }

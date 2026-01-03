@@ -10,6 +10,11 @@ public static class ClaimsPrincipalExensions
         return int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int userId) ? userId : 0;
     }
 
+    // public static string GetName(this ClaimsPrincipal User)
+    // {
+    //     return User.FindFirst(ClaimTypes.Name)?.Value;
+    // }
+
     public static string GetUsername(this ClaimsPrincipal User)
     {
         return User.FindFirst(ClaimTypes.Name)?.Value;

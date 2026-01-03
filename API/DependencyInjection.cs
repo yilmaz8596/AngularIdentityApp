@@ -1,10 +1,12 @@
 using System;
 using API.Data;
+using API.DTOs;
 using API.Interfaces;
 using API.Models;
 using API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -37,6 +39,29 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddScoped<ITokenService, TokenService>();
+
+        services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                var errors = context.ModelState
+                    .Where(e => e.Value.Errors.Count > 0)
+                    .SelectMany(e => e.Value.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                var apiResponse = new APIResponse(
+                    isSuccess: false,
+                    statusCode: 400,
+                    title: "Validation Error",
+                    message: "One or more validation errors occurred.",
+                    details: null,
+                    errors: errors
+                );
+
+                return new BadRequestObjectResult(apiResponse);
+            };
+        });
 
         services.AddAuthentication(opt =>
         {

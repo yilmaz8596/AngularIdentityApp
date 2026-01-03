@@ -15,6 +15,14 @@ builder.Services.AddApiServices(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseCors(
+    policy => policy
+        .WithOrigins(builder.Configuration["JWT:ClientUrl"]!)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

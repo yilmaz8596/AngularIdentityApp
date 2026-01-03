@@ -6,17 +6,12 @@ namespace API.DTOs;
 
 public class RegisterDto
 {
-    // Username
+    // Name 
     [Required]
-    [StringLength(20, MinimumLength = 3, ErrorMessage = "Username must be between {1} and {2} characters")]
-    [RegularExpression(UsernamePattern, ErrorMessage = "Username can only contain alphanumeric characters")]
-    private string _username = string.Empty;
+    [StringLength(50, MinimumLength = 2, ErrorMessage = "Name must be between {1} and {2} characters")]
+    [RegularExpression(UsernamePattern, ErrorMessage = "Name can only contain alphanumeric characters")]
+    public string Name { get; set; } = string.Empty;
 
-    public string Username
-    {
-        get => _username;
-        set => _username = value.ToLower();
-    }
 
     // Email 
     [Required]

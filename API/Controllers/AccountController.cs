@@ -30,7 +30,7 @@ namespace API.Controllers
 
             var appUserDto = new AppUserDto
             {
-                Username = user.UserName
+                Name = user.Name
             };
 
             return Ok(appUserDto);
@@ -41,19 +41,35 @@ namespace API.Controllers
         {
             if (await CheckEmailExistsAsync(registerDto.Email))
             {
-                return BadRequest("Email is already in use");
+                return Unauthorized(new APIResponse(
+                    isSuccess: false,
+                    statusCode: 400,
+                    title: "Email Taken",
+                    message: "The email is already taken.",
+                    details: null,
+                    errors: new List<string> { "Please use a different email address." }
+                ));
             }
 
-            if (await CheckUsernameExistsAsync(registerDto.Username))
+            if (await CheckNameExistsAsync(registerDto.Name))
             {
-                return BadRequest("Username is already taken");
+                return Unauthorized(new APIResponse(
+                    isSuccess: false,
+                    statusCode: 400,
+                    title: "Username Taken",
+                    message: "The username is already taken.",
+                    details: null,
+                    errors: new List<string> { "Please use a different username." }
+                ));
             }
 
             var userToAdd = new AppUser
             {
-                UserName = registerDto.Username,
+                Name = registerDto.Name,
+                UserName = registerDto.Name.ToLower(),
                 Email = registerDto.Email,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                LockoutEnabled = true,
             };
 
             var result = await _userManager.CreateAsync(userToAdd, registerDto.Password);
@@ -62,6 +78,27 @@ namespace API.Controllers
                 return BadRequest(result.Errors);
 
             return Ok("Registration successful");
+        }
+
+        [HttpGet("name-taken")]
+
+        public async Task<IActionResult> IsNameTaken([FromQuery] string name)
+        {
+            if (await CheckNameExistsAsync(name))
+            {
+                return Ok(new { isTaken = true });
+            }
+            return Ok(new { isTaken = false });
+        }
+
+        [HttpGet("email-taken")]
+        public async Task<IActionResult> IsEmailTaken([FromQuery] string email)
+        {
+            if (await CheckEmailExistsAsync(email))
+            {
+                return Ok(new { isTaken = true });
+            }
+            return Ok(new { isTaken = false });
         }
 
         [HttpPost("login")]
@@ -73,15 +110,41 @@ namespace API.Controllers
 
             if (user is null)
             {
-                return BadRequest("User not found");
+                return Unauthorized(new APIResponse(
+                    isSuccess: false,
+                    statusCode: 401,
+                    title: "Invalid Credentials",
+                    message: "The provided credentials are invalid.",
+                    details: null,
+                    errors: new List<string> { "Please check your email and password and try again." }
+                ));
             }
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
+            var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, true);
 
             if (!result.Succeeded)
             {
                 RemoveJwtCookie();
-                return Unauthorized("Invalid username or password");
+
+                if (result.IsLockedOut)
+                {
+                    return Unauthorized(new APIResponse(
+                        isSuccess: false,
+                        statusCode: 401,
+                        title: "Account Locked",
+                        message: "The account is locked due to multiple failed login attempts.",
+                        details: null,
+                        errors: new List<string> { "Please try again later or reset your password." }
+                    ));
+                }
+                return Unauthorized(new APIResponse(
+                    isSuccess: false,
+                    statusCode: 401,
+                    title: "Invalid Credentials",
+                    message: "The provided credentials are invalid.",
+                    details: null,
+                    errors: new List<string> { "Please check your email and password and try again." }
+                ));
             }
 
             var jwtToken = _tokenService.CreateToken(user);
@@ -89,7 +152,7 @@ namespace API.Controllers
 
             var appUserDto = new AppUserDto
             {
-                Username = user.UserName
+                Name = user.Name
             };
 
             return CreateAppUserDto(appUserDto, jwtToken);
@@ -113,12 +176,19 @@ namespace API.Controllers
             if (user is null)
             {
                 RemoveJwtCookie();
-                return Unauthorized("User not found");
+                return Unauthorized(new APIResponse(
+                    isSuccess: false,
+                    statusCode: 401,
+                    title: "User Not Found",
+                    message: "The user could not be found.",
+                    details: null,
+                    errors: new List<string> { "Please log in again." }
+                ));
             }
 
             var appUserDto = new AppUserDto
             {
-                Username = user.UserName
+                Name = user.Name
             };
 
             var jwtToken = _tokenService.CreateToken(user);
@@ -132,7 +202,7 @@ namespace API.Controllers
 
             return new AppUserDto
             {
-                Username = appUserDto.Username,
+                Name = appUserDto.Name,
                 JWT = jwtToken
             };
         }
@@ -161,9 +231,10 @@ namespace API.Controllers
             return await _userManager.FindByEmailAsync(email) != null;
         }
 
-        private async Task<bool> CheckUsernameExistsAsync(string username)
+
+        private async Task<bool> CheckNameExistsAsync(string name)
         {
-            return await _userManager.FindByNameAsync(username) != null;
+            return await _userManager.Users.AnyAsync(u => u.UserName == name.ToLower());
         }
     }
 }

@@ -1,0 +1,10 @@
+@if(errorMessages && errorMessages.length > 0) {
+<div class="validation-messages">
+  <div
+    *ngFor="let message of errorMessages;trackBy: trackByFn"
+    class="validation-message"
+  >
+    {{ message }}
+  </div>
+</div>
+}

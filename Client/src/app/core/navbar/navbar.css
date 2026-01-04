@@ -1,0 +1,4 @@
+:host .navbar-nav .nav-link.active,
+:host .navbar-nav .nav-link.active:hover {
+  color: orange;
+}

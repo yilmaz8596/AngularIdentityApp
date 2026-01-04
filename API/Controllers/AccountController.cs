@@ -101,6 +101,12 @@ namespace API.Controllers
             return Ok(new { isTaken = false });
         }
 
+        [HttpGet("auth-status")]
+        public IActionResult GetAuthStatus()
+        {
+            return Ok(new { isAuthenticated = User.Identity?.IsAuthenticated ?? false });
+        }
+
         [HttpPost("login")]
         public async Task<ActionResult<AppUserDto>> Login([FromBody] LoginDto loginDto)
         {
